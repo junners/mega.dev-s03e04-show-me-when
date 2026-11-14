@@ -67,6 +67,24 @@ function buildRow(i) {
   return li;
 }
 
+// The API can restate an incident (its openedAt moved between answers): keep the row, refresh its fields.
+function updateRow(li, i) {
+  const time = li.querySelector('time');
+  if (time.getAttribute('datetime') !== i.openedAt) {
+    time.setAttribute('datetime', i.openedAt);
+    time.title = i.openedAt;
+    time.textContent = localTime(i.openedAt);
+  }
+  const what = `${i.service} · ${i.region} · ${i.summary}`;
+  const whatEl = li.querySelector('.what');
+  if (whatEl.textContent !== what) whatEl.textContent = what;
+  if (li.querySelector('.sev').textContent !== i.severity) {
+    li.querySelector('.sev').textContent = i.severity;
+    li.classList.remove('sev1', 'sev2', 'sev3', 'sev4');
+    li.classList.add(i.severity);
+  }
+}
+
 // R1: newest first, new ones at the top; existing rows are reused, not rebuilt.
 function render(incidents) {
   const seen = new Set();
@@ -77,6 +95,8 @@ function render(incidents) {
     if (!li) {
       li = buildRow(i);
       rows.set(i.id, li);
+    } else {
+      updateRow(li, i);
     }
     const want = prev ? prev.nextSibling : list.firstChild;
     if (li !== want) list.insertBefore(li, want);
