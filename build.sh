@@ -6,4 +6,6 @@ if [ -n "$(git status --porcelain -- app)" ]; then echo "app/ has uncommitted ch
 SHA=$(git rev-parse HEAD)
 rm -rf dist && cp -R app dist
 sed -i '' "s/__BUILD_SHA__/$SHA/g" dist/index.html
+# Recordings are not part of the build: copied in beside it so the host serves them as files.
+[ -d media ] && cp -R media dist/media
 echo "$SHA"
