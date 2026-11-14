@@ -17,6 +17,7 @@ const timeFormat = new Intl.DateTimeFormat(navigator.languages, {
   minute: '2-digit',
   timeZoneName: 'short',
 });
+const clockFormat = new Intl.DateTimeFormat(navigator.languages, { hour: '2-digit', minute: '2-digit' });
 export function localTime(iso) {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : timeFormat.format(d);
@@ -30,7 +31,7 @@ function el(tag, attrs = {}, text) {
 }
 
 function markAcked(li, reply) {
-  const mark = el('span', { 'data-testid': 'acked', class: 'acked' }, `acked ${localTime(reply.ackedAt)}`);
+  const mark = el('span', { 'data-testid': 'acked', class: 'acked', title: `acked ${reply.ackedAt}` }, `✓ acked ${clockFormat.format(new Date(reply.ackedAt))}`);
   li.querySelector('.act').replaceChildren(mark);
   li.classList.add('is-acked');
 }
