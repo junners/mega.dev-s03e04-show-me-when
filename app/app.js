@@ -6,6 +6,7 @@ const list = document.querySelector('[data-testid="incident-list"]');
 const loader = document.querySelector('[data-testid="loader"]');
 const empty = document.querySelector('[data-testid="empty"]');
 const status = document.querySelector('[data-status]');
+const newBar = document.querySelector('[data-testid="new-bar"]');
 
 const rows = new Map(); // incident id -> <li>, so a refresh keeps rows (and their ack state) in place
 
@@ -86,7 +87,8 @@ function updateRow(li, i) {
   }
 }
 
-// R1: newest first, new ones at the top; existing rows are reused, not rebuilt.
+// Lays the list out as the API has it: newest first; existing rows are reused, not rebuilt.
+// Runs only on first load and when on-call clicks the "N new" bar (R1), never on its own.
 function render(incidents) {
   const seen = new Set();
   let prev = null;
@@ -112,14 +114,35 @@ function render(incidents) {
   empty.hidden = incidents.length > 0;
 }
 
+// R1 (product, after the 00:14 misack): the list holds still while it is on screen. A refresh only
+// updates rows already shown, in place; new incidents wait behind the "N new" bar until it is clicked.
+let latest = [];
+function hold(incidents) {
+  const fresh = incidents.filter((i) => !rows.has(i.id));
+  for (const i of incidents) {
+    const li = rows.get(i.id);
+    if (li) updateRow(li, i);
+  }
+  newBar.textContent = `${fresh.length} new incident${fresh.length === 1 ? '' : 's'} · show`;
+  newBar.hidden = fresh.length === 0;
+}
+
+newBar.addEventListener('click', () => {
+  render(latest);
+  newBar.hidden = true;
+});
+
 let loaded = false;
 async function refresh() {
   try {
     const page = await fetchIncidents();
-    render(page.incidents);
+    latest = page.incidents;
     if (!loaded) {
+      render(latest);
       loaded = true;
       loader.remove(); // R3: gone once incidents load
+    } else {
+      hold(latest);
     }
     status.textContent = `· updated ${localTime(page.updatedAt)}`;
     status.classList.remove('stale');
